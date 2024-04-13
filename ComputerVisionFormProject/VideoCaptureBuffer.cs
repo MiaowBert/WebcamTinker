@@ -1,4 +1,21 @@
-﻿using System.Drawing.Imaging;
+﻿/*
+    Copyright 2024 Nathan Krone
+
+   Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+   You may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://creativecommons.org/licenses/by-nc/4.0/
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
+using ComputerVisionFormProject;
+using System.Drawing.Imaging;
 
 ///<summary>
 ///    Represents a buffer for storing video frames captured by a camera device.
@@ -25,12 +42,15 @@ public class VideoCaptureBuffer
     /// <summary>
     /// Determines if the buffer is set to scale the images before storing them
     /// </summary>
-    protected bool scalesImages;
+    public bool scalesImages;
 
     /// <summary>
     /// Gets the current index in the buffer.
     /// </summary>
     public int Index { get { return index; } protected set { index = value; } }
+
+
+    public int Size {  get ; protected set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VideoCaptureBuffer"/> class with the specified buffer size.
@@ -38,10 +58,81 @@ public class VideoCaptureBuffer
     /// <param name="bufferSize">The size of the buffer.</param>
     public VideoCaptureBuffer(int bufferSize, bool enableScaling = false)
     {
+        Size = bufferSize;
+
         InitializeBuffer(bufferSize);
 
         scalesImages = enableScaling;
     }
+
+    /// <summary>
+    /// Scales the specified bitmap to the desired width and height using bilinear interpolation.
+    /// </summary>
+    /// <param name="b">The bitmap to scale.</param>
+    /// <param name="x">The desired width of the scaled image.</param>
+    /// <param name="y">The desired height of the scaled image.</param>
+    public Bitmap ScaleBilinearInterpolate(Bitmap b, int x, int y)
+    {
+        // Create a new bitmap with the desired dimensions
+        Bitmap scaledBitmap = new Bitmap(x, y);
+
+        // Calculate scaling factors for width and height
+        float scaleX = (float)b.Width / x;
+        float scaleY = (float)b.Height / y;
+
+        // Loop through each pixel in the scaled image
+        for (int i = 0; i < x; i++)
+        {
+            for (int j = 0; j < y; j++)
+            {
+                // Calculate the corresponding pixel coordinates in the original image
+                float originalX = i * scaleX;
+                float originalY = j * scaleY;
+
+                // Calculate the surrounding pixel coordinates
+                int x1 = (int)originalX;
+                int x2 = x1 + 1;
+                int y1 = (int)originalY;
+                int y2 = y1 + 1;
+
+                // Clamp the coordinates to stay within the bounds of the original image
+                x1 = Math.Max(0, Math.Min(b.Width - 1, x1));
+                x2 = Math.Max(0, Math.Min(b.Width - 1, x2));
+                y1 = Math.Max(0, Math.Min(b.Height - 1, y1));
+                y2 = Math.Max(0, Math.Min(b.Height - 1, y2));
+
+                // Calculate the fractional parts for interpolation
+                float deltaX = originalX - x1;
+                float deltaY = originalY - y1;
+
+                // Get the colors of the surrounding pixels
+                Color c1 = b.GetPixel(x1, y1);
+                Color c2 = b.GetPixel(x2, y1);
+                Color c3 = b.GetPixel(x1, y2);
+                Color c4 = b.GetPixel(x2, y2);
+
+                // Interpolate colors using bilinear interpolation
+                float red = Interpolate(c1.R, c2.R, c3.R, c4.R, deltaX, deltaY);
+                float green = Interpolate(c1.G, c2.G, c3.G, c4.G, deltaX, deltaY);
+                float blue = Interpolate(c1.B, c2.B, c3.B, c4.B, deltaX, deltaY);
+
+                // Set the color of the corresponding pixel in the scaled image
+                scaledBitmap.SetPixel(i, j, Color.FromArgb((int)red, (int)green, (int)blue));
+            }
+        }
+
+        return scaledBitmap;
+    }
+
+    // Helper function for bilinear interpolation
+    private float Interpolate(float s1, float s2, float s3, float s4, float deltaX, float deltaY)
+    {
+        return s1 * (1 - deltaX) * (1 - deltaY) +
+               s2 * deltaX * (1 - deltaY) +
+               s3 * (1 - deltaX) * deltaY +
+               s4 * deltaX * deltaY;
+    }
+
 
     /// <summary>
     /// Scales the specified bitmap to the desired width and height using color interpolation.
@@ -49,7 +140,7 @@ public class VideoCaptureBuffer
     /// <param name="b">The bitmap to scale.</param>
     /// <param name="x">The desired width of the scaled image.</param>
     /// <param name="y">The desired height of the scaled image.</param>
-    public void Scale(Bitmap b, int x, int y)
+    public Bitmap Scale(Bitmap b, int x, int y )
     {
         // Create a new bitmap with the desired dimensions
         Bitmap scaledBitmap = new Bitmap(x, y);
@@ -78,9 +169,9 @@ public class VideoCaptureBuffer
         // Replace the original bitmap with the scaled bitmap
         //b.Dispose(); // Dispose the original bitmap to free up resources
 
-        Bitmap bmp = scaledBitmap.Clone(new Rectangle(0, 0, scaledBitmap.Width, scaledBitmap.Height), PixelFormat.Format24bppRgb);
+        //Bitmap bmp = scaledBitmap.Clone(new Rectangle(0, 0, scaledBitmap.Width, scaledBitmap.Height), PixelFormat.Format24bppRgb);
 
-        b = bmp; // Update the reference to the original bitmap
+        return scaledBitmap;
     }
 
 
@@ -107,10 +198,16 @@ public class VideoCaptureBuffer
     {
         if (frame != null)
         {
-            if( scalesImages ) { Scale( frame , (int)( 640f / 2f ) , (int)( 480f / 2f ) ); }
+            if( scalesImages ) { 
+
+                buffer[index] = ( ScaleBilinearInterpolate( frame , (int)( 640f / Config.scaleX ), (int)( 480f / Config.scaleY) ) );
+
+            } else {
 
             // Update buffer with the new frame
-            buffer[index] = frame;
+                buffer[index] = frame;
+
+            }
 
             // Increment index with wrapping
             index = (index + 1) % buffer.Length;

@@ -1,3 +1,19 @@
+/*
+    Copyright 2024Nathan Krone
+
+   Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+   You may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://creativecommons.org/licenses/by-nc/4.0/
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 using System;
 using System.Drawing.Imaging;
 using AForge.Video;
@@ -8,8 +24,11 @@ namespace ComputerVisionFormProject {
     public partial class Form1 : Form {
 
         AForge.Video.DirectShow.FilterInfoCollection videoDevices;
+
         VideoCaptureDevice videoDevice;
-        private VideoCaptureBuffer videoCaptureBuffer = new( 64 , true );
+
+        private VideoCaptureBuffer buffer = new(bufferSize: 64, enableScaling: true);
+
         private bool connected = false;
 
         CancellationTokenSource cancelVideoToken;
@@ -53,9 +72,9 @@ namespace ComputerVisionFormProject {
 
         private void VideoDevice_NewFrame(object sender, NewFrameEventArgs args) {
             if (args.Frame != null) {
-                var bmp = args.Frame.Clone(new Rectangle(0, 0, args.Frame.Width, args.Frame.Height), PixelFormat.Format24bppRgb); 
+                var bmp = args.Frame.Clone(new Rectangle(0, 0, args.Frame.Width, args.Frame.Height), PixelFormat.Format24bppRgb);
 
-                videoCaptureBuffer.push(bmp);
+                buffer.push(bmp);
 
             }
         }
@@ -63,7 +82,7 @@ namespace ComputerVisionFormProject {
         private void DEBUG() {
             //value of index, if frame is null or not. 
 
-            WriteLine($"INDEX: {videoCaptureBuffer.Index}");
+            WriteLine($"INDEX: {buffer.Index}");
         }
 
 
@@ -72,7 +91,7 @@ namespace ComputerVisionFormProject {
         /// </summary>
         /// <param name="token"> allows the user to cancel the procedure </param>
         /// <returns></returns>
-        protected Task UpdatePicture( CancellationTokenSource token ) {
+        protected Task UpdatePicture(CancellationTokenSource token) {
             bool res = false;
 
             while (!token.IsCancellationRequested) {
@@ -80,7 +99,7 @@ namespace ComputerVisionFormProject {
                 try {
 
                     pic_video.Invoke((Action)(() => {
-                        Bitmap bmp = videoCaptureBuffer.pop();
+                        Bitmap bmp = buffer.pop();
 
                         if (bmp != null) pic_video.Image = bmp;
 
@@ -93,7 +112,8 @@ namespace ComputerVisionFormProject {
                 }
             }
 
-            this.Invoke((Action)(() => { this.WriteLine("Cancellation via token requested"); }));
+            if (token.IsCancellationRequested) this.Invoke((Action)(() => { this.WriteLine("Cancellation via token requested"); }));
+
             this.Invoke((Action)(() => { this.WriteLine(""); }));
 
             return new Task<bool>(() => { return res; });
@@ -124,24 +144,24 @@ namespace ComputerVisionFormProject {
 
                         try {
 
-                            this.Invoke((Action)(() => { 
+                            this.Invoke((Action)(() => {
 
-                                this.lbl_connectStatus.Text = "Status: Online"; 
+                                this.lbl_connectStatus.Text = "Status: Online";
                                 cancelVideoToken = new();
 
                             }));
 
-                            this.Invoke((Action)(() => { 
+                            this.Invoke((Action)(() => {
                                 this.toggleConnectStatus();
 
                             }));
 
 
-                            await Task.Run(() => { 
-                                UpdatePicture( cancelVideoToken); 
-                            } );
+                            await Task.Run(() => {
+                                UpdatePicture(cancelVideoToken);
+                            });
 
-                            this.Invoke((Action)(() => { 
+                            this.Invoke((Action)(() => {
                                 this.toggleConnectStatus();
                             }));
 
@@ -158,10 +178,6 @@ namespace ComputerVisionFormProject {
 
             }
 
-
-
-
-
         }
 
         private void toggleConnectStatus() {
@@ -170,23 +186,45 @@ namespace ComputerVisionFormProject {
 
             if (connected) {//
                 lbl_connectStatus.Text = "Status: Online";
-                pictureBox1.Image = Image.FromFile( "Images/CameraOn.png");
+                pictureBox1.Image = Image.FromFile("Images/CameraOn.png");
 
-            }else {//
+            } else {//
                 lbl_connectStatus.Text = "Status: Offline";
-                pictureBox1.Image = Image.FromFile( "Images/CameraOff.png");
+                pictureBox1.Image = Image.FromFile("Images/CameraOff.png");
+                pic_video.Image = null;
+
             }
 
         }
 
         private void btn_disconnect_Click(object sender, EventArgs e) {
-            if( cancelVideoToken != null && cancelVideoToken.IsCancellationRequested == false) {
-               lbl_connectStatus.Text = "Status: Request Cancel";
-               cancelVideoToken.Cancel();
+            if (cancelVideoToken != null && cancelVideoToken.IsCancellationRequested == false) {
+                lbl_connectStatus.Text = "Status: Request Cancel";
+                cancelVideoToken.Cancel();
             }
 
         }
 
+        private void num_scaleFactor_ValueChanged(object sender, EventArgs e) {
+            int num = (int)(num_scaleFactor.Value);
+
+            if( num <= 0 ) {
+                num = 1;
+
+            }else if( num >= 21 ) { 
+                num = 20;    
+
+            }
+
+            if( num == 1) {
+                buffer.scalesImages = false;
+            } else {
+                buffer.scalesImages = true;
+                Config.scaleX = num;
+                Config.scaleY = num;
+            }
+
+        }
     }
 
 }

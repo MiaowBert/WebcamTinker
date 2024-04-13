@@ -1,4 +1,20 @@
-﻿namespace ComputerVisionFormProject {
+﻿/*
+    Copyright 2024 Nathan Krone
+
+   Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+   You may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://creativecommons.org/licenses/by-nc/4.0/
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
+namespace ComputerVisionFormProject {
     partial class Form1 {
         /// <summary>
         ///  Required designer variable.
@@ -30,8 +46,11 @@
             lbl_connectStatus = new Label();
             btn_disconnect = new Button();
             pictureBox1 = new PictureBox();
+            num_scaleFactor = new NumericUpDown();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)pic_video).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)num_scaleFactor).BeginInit();
             SuspendLayout();
             // 
             // pic_video
@@ -53,9 +72,9 @@
             lst_debug.Enabled = false;
             lst_debug.FormattingEnabled = true;
             lst_debug.ItemHeight = 15;
-            lst_debug.Location = new Point(507, 118);
+            lst_debug.Location = new Point(507, 163);
             lst_debug.Name = "lst_debug";
-            lst_debug.Size = new Size(268, 259);
+            lst_debug.Size = new Size(268, 214);
             lst_debug.TabIndex = 1;
             // 
             // lst_devices
@@ -63,7 +82,7 @@
             lst_devices.BackColor = Color.Azure;
             lst_devices.FormattingEnabled = true;
             lst_devices.ItemHeight = 15;
-            lst_devices.Location = new Point(507, 33);
+            lst_devices.Location = new Point(507, 78);
             lst_devices.Name = "lst_devices";
             lst_devices.Size = new Size(268, 79);
             lst_devices.TabIndex = 2;
@@ -91,11 +110,32 @@
             // 
             // pictureBox1
             // 
+            pictureBox1.BackColor = Color.Transparent;
+            pictureBox1.BackgroundImageLayout = ImageLayout.Zoom;
             pictureBox1.Location = new Point(668, 4);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(26, 23);
             pictureBox1.TabIndex = 5;
             pictureBox1.TabStop = false;
+            // 
+            // num_scaleFactor
+            // 
+            num_scaleFactor.Location = new Point(621, 30);
+            num_scaleFactor.Name = "num_scaleFactor";
+            num_scaleFactor.Size = new Size(41, 23);
+            num_scaleFactor.TabIndex = 6;
+            num_scaleFactor.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            num_scaleFactor.ValueChanged += num_scaleFactor_ValueChanged;
+            // 
+            // label1
+            // 
+            label1.BorderStyle = BorderStyle.Fixed3D;
+            label1.Location = new Point(507, 30);
+            label1.Name = "label1";
+            label1.Size = new Size(108, 23);
+            label1.TabIndex = 7;
+            label1.Text = "Scale By";
+            label1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Form1
             // 
@@ -103,7 +143,9 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = Properties.Resources.oris_conjabe;
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(780, 390);
+            ClientSize = new Size(785, 385);
+            Controls.Add(label1);
+            Controls.Add(num_scaleFactor);
             Controls.Add(pictureBox1);
             Controls.Add(btn_disconnect);
             Controls.Add(lbl_connectStatus);
@@ -115,6 +157,7 @@
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)pic_video).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)num_scaleFactor).EndInit();
             ResumeLayout(false);
         }
 
@@ -126,5 +169,7 @@
         private Label lbl_connectStatus;
         private Button btn_disconnect;
         private PictureBox pictureBox1;
+        private NumericUpDown num_scaleFactor;
+        private Label label1;
     }
 }

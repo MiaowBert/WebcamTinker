@@ -1,4 +1,4 @@
-/*
+﻿/*
     Copyright 2024 Nathan Krone
 
    Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
@@ -13,18 +13,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ComputerVisionFormProject {
-    internal static class Program {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
-        [STAThread]
-        static void Main() {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
-        }
+
+    internal static class Config {
+        public static int scaleX = 1;
+        public static int scaleY = 1;
+
+
     }
 }
